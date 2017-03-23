@@ -1,13 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "records.h"
 
 char variable[16], digit[10];
 char exprsym[] = {'+', '-', '%', '*'};
 char psym[] = {'#'};
 char sym;
 FILE* f;
-VarRecord* vr;
 char nc = EOF;
 
 void init() {
@@ -18,7 +16,6 @@ void init() {
     for (i = 0; i < 10; i++) {
         digit[i] = '0' + i;
     }
-    vr = newrecord();
 }
 
 typedef enum BOOL {
@@ -89,30 +86,15 @@ BOOL digitc(char d) {
     return contains(digit, 10, d);
 }
 
-int expr() {
+BOOL expr() {
     // printf("EXPR\n");
     next();
-    if (variablec(sym) == TRUE) {
-        int v = getvar(vr, sym);
-        if (v == -1) {
-            error("Variable used before instantiation");
-        }
-        return v;
-    }
-    else if (digitc(sym) == TRUE) { return sym - '0'; }
+    if (variablec(sym) == TRUE) { return TRUE; }
+    else if (digitc(sym) == TRUE) { return TRUE; }
     else if (contains(exprsym, 4, sym) == TRUE) {
-        switch(sym) {
-            case '+':
-                return expr() + expr();
-            case '-':
-                return expr() - expr();
-            case '%':
-                return expr() / expr();
-            case '*':
-                return expr() * expr();
-        }
+        if ((expr() == TRUE) && (expr() == TRUE)) return TRUE;
     }
-    error("Invalid operation");
+    return FALSE;
 }
 
 BOOL assign() {
