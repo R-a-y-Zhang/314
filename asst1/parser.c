@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "records.h"
+#include "instructions.h"
 
 char variable[16], digit[10];
 char exprsym[] = {'+', '-', '%', '*'};
@@ -89,46 +90,61 @@ BOOL digitc(char d) {
     return contains(digit, 10, d);
 }
 
-int expr() {
+Var* expr() {
     // printf("EXPR\n");
     next();
     if (variablec(sym) == TRUE) {
-        int v = getvar(vr, sym);
-        if (v == -1) {
-            error("Variable used before instantiation");
-        }
-        return v;
+        return findvar(sym);
     }
-    else if (digitc(sym) == TRUE) { return sym - '0'; }
+    else if (digitc(sym) == TRUE) {
+        Var* reg = newreg(sym-'0');
+        insertreg(reg);
+        return reg;
+    }
     else if (contains(exprsym, 4, sym) == TRUE) {
+        Var* reg = newreg(0);
         switch(sym) {
             case '+':
-                return expr() + expr();
+                reg->val = expr()->val + expr()->val;
+                break;
             case '-':
-                return expr() - expr();
+                reg->val = expr()->val - expr()->val;
+                break;
             case '%':
-                return expr() / expr();
+                reg->val = expr()->val / expr()->val;
+                break;
             case '*':
-                return expr() * expr();
+                reg->val = expr()->val * expr()->val;
+                break;
         }
+        return reg;
     }
     error("Invalid operation");
+    return NULL;
 }
 
 BOOL assign() {
     printf("ASSIGN\n");
     next();
     if (variablec(sym) == TRUE) {
+        char vname = sym;
         next();
         if (sym == '=') {
-            if (expr() == TRUE) { return TRUE; }
-            else return FALSE;
+            int v = expr();
+            if (findvar(vr, vname) == vname) {
+                modifyvar(vr, v);
+                return TRUE;
+            } else {
+                insertvar(vr, newvar(vname, v));
+                return TRUE;
+            }
         } else {
-            return FALSE;
+            error("Invalid character");
         }
     } else {
-        return FALSE;
+        error("Invalid character");
     }
+    return FALSE;
 }
 
 BOOL print() {
@@ -136,9 +152,12 @@ BOOL print() {
     next();
     if (sym == '#') {
         next();
-        if (variablec(sym) == TRUE) { return TRUE; }
-        else return FALSE;
-    } else return FALSE;
+        if (variablec(sym) == TRUE) { 
+            printf("%d\n", getvar(vr, sym));
+            return TRUE;
+        } else error("Invalid character");
+    } else error("Invalid character");
+    return FALSE;
 }
 
 BOOL stmt() {

@@ -4,22 +4,26 @@
 // keeps track of declared variables
 
 typedef struct Var {
-    char v;
-    int cv;
+    int reg; // register id (r<id>)
+    char var; // register alias (used only for userspace variables)
+    int val; // value in register
     struct var* next;
 } Var;
 
 typedef struct VarRecord {
     Var* root;
+    int ureg, sreg;
     char nc;
 } VarRecord;
 
 VarRecord* newrecord();
-Var* newvar(char c, int cv);
-void insertvar(VarRecord* vr, Var* v);
-char modifyvar(VarRecord* vr, char c, int nv);
-int getvar(VarRecord* vr, char c);
-char findvar(VarRecord* vr, char c);
+Var* newreg(VarRecord* vr, int val);
+Var* newureg(VarRecord* vr, char name, int val);
+void insertreg(VarRecord* vr, Var* v);
+int modifyreg(VarRecord* vr, int reg, int nv);
+Var* findreg(VarRecord* vr, int reg);
+Var* findvar(VarRecord* vr, char var);
+void deletereg(VarRecord* vr, int reg);
 void clearrecord(VarRecord* vr);
 
 #endif
