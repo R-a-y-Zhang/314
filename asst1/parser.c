@@ -10,6 +10,7 @@ char sym;
 FILE* f;
 VarRecord* vr;
 char nc = EOF;
+machine* mach;
 
 void init() {
     int i;
@@ -20,6 +21,7 @@ void init() {
         digit[i] = '0' + i;
     }
     vr = newrecord();
+    mach = newmachine();
 }
 
 typedef enum BOOL {
@@ -68,7 +70,7 @@ BOOL stmtlist();
 BOOL morestmts();
 BOOL variablec(char);
 BOOL digitc(char);
-BOOL expr();
+Var* expr();
 BOOL assign();
 BOOL print();
 BOOL stmt();
@@ -93,30 +95,58 @@ BOOL digitc(char d) {
 Var* expr() {
     // printf("EXPR\n");
     next();
+    printf("SYM %c\n", sym);
     if (variablec(sym) == TRUE) {
-        return findvar(sym);
+        return findvar(vr, sym);
     }
     else if (digitc(sym) == TRUE) {
-        Var* reg = newreg(sym-'0');
-        insertreg(reg);
+        Var* reg = newreg(vr, sym-'0');
+        insertreg(vr, reg);
+        addop(mach, loadI(reg->val, reg->reg));
         return reg;
     }
     else if (contains(exprsym, 4, sym) == TRUE) {
-        Var* reg = newreg(0);
-        switch(sym) {
+        char operation = sym;
+        Var* reg = newreg(vr, 0);
+        Var* ex1 = expr();
+        Var* ex2 = expr();
+        printf("EX1 %d, EX2 %d\n", ex1->val, ex2->val);
+        opc* op = NULL;
+        switch(operation) {
             case '+':
-                reg->val = expr()->val + expr()->val;
+                op = opadd(0, 0, reg->reg);
+                reg->val = ex1->val + ex2->val;
                 break;
             case '-':
-                reg->val = expr()->val - expr()->val;
+                op = opsub(0, 0, reg->reg);
+                reg->val = ex1->val + ex2->val;
                 break;
             case '%':
-                reg->val = expr()->val / expr()->val;
+                op = opdiv(0, 0, reg->reg);
+                reg->val = ex1->val / ex2->val;
                 break;
             case '*':
-                reg->val = expr()->val * expr()->val;
+                op = opmul(0, 0, reg->reg);
+                reg->val = ex1->val * ex2->val;
                 break;
         }
+        insertreg(vr, reg);
+        printf("REG %d has value %d, %c %d %d\n",
+                    reg->reg, reg->val, operation, ex1->val, ex2->val);
+        fflush(stdout);
+        int r1 = ex1->reg;
+        int r2 = ex2->reg;
+        if (ex1->var != 0) { // must be loaded to register from memory
+            addop(mach, loadAI(0, ex1->reg, vr->nc)); // loading into register
+            r1 = vr->nc;
+            vr->nc++; // advance available registers
+        }
+        if (ex2->var != 0) {
+            addop(mach, loadAI(0, ex2->reg, vr->nc));
+            r2 = vr->nc;
+            vr->nc++;
+        }
+        op->in1 = r1; op->in2 = r2;
         return reg;
     }
     error("Invalid operation");
@@ -130,12 +160,17 @@ BOOL assign() {
         char vname = sym;
         next();
         if (sym == '=') {
-            int v = expr();
-            if (findvar(vr, vname) == vname) {
-                modifyvar(vr, v);
+            Var* v = expr(); // expression that the new register shall hold
+            Var* modvar = findvar(vr, vname);
+            if (modvar != NULL) {
+                modvar->val = v->val;
                 return TRUE;
             } else {
-                insertvar(vr, newvar(vname, v));
+                Var* newvar = newureg(vr, vname, v->val);
+                printf("New register %d with varname %c value %d\n",
+                            newvar->reg, newvar->var, newvar->val);
+                addop(mach, 
+                insertreg(vr, newvar);
                 return TRUE;
             }
         } else {
@@ -152,8 +187,9 @@ BOOL print() {
     next();
     if (sym == '#') {
         next();
-        if (variablec(sym) == TRUE) { 
-            printf("%d\n", getvar(vr, sym));
+        if (variablec(sym) == TRUE) {
+            Var* var = findvar(vr, sym);
+            addop(mach, opprint(0, var->reg));
             return TRUE;
         } else error("Invalid character");
     } else error("Invalid character");
@@ -193,4 +229,5 @@ int main(int argc, char** argv) {
     loadFile(argv[1]);
     init();
     printf("%d\n", program());
+    printrecord(vr);
 }

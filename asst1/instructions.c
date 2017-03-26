@@ -1,42 +1,106 @@
 #include <stdlib.h>
 
-// load
-opc load(int v, int out) {
-    opc op = {.ins LOAD, .val v, .in1 -1, .in2 -1, .offset 0, .out out};
+opc* newopc(INS v) {
+    opc* op = (opc*)calloc(1, sizeof(opc));
+    op->ins = v;
+    op->in1 = -1;
+    op->in2 = -1;
+    op->out = -1;
     return op;
 }
 
-opc loadAI(int v, int in, int offset, int out) {
-    opc op = {.ins LOADAI, .val v, .in1 in, .in2 -1, .offset offset, .out out};
+opc* loadI(int v, int in) {
+    opc* op = newopc(LOAD);
+    op->val = v;
+    op->in1 = in;
     return op;
 }
 
-opc loadI(int v, int in, int out, int offset) {
-    opc op = {.ins LOADI, .val v, .in1 in, .in2 -1, .offset offset, .out out};
+opc* loadAI(int in, int offset, int out) {
+    opc* op = newopc(LOADAI);
+    op->in1 = in;
+    op->offset = offset;
+    op->out = out;
     return op;
 }
 
-opc add(int in1, int in2, int out) {
-    opc op = {.ins ADD, .val 0, .in1 in1, .in2 in2, .offset 0, .out out};
+opc* storeAI(int v, int in, int out, int offset) {
+    opc* op = newopc(STOREAI);
+    op->in1 = in;
+    op->out = out;
+    op->offset = offset;
     return op;
 }
 
-opc sub(int in1, int in2, int out) {
-    opc op = {.ins SUB, .val 0, .in1 in1, .in2 in2, .offset 0, .out out};
+opc* opadd(int in1, int in2, int out) {
+    opc* op = newopc(ADD);
+    op->in1 = in1;
+    op->in2 = in2;
+    op->out = out;
     return op;
 }
 
-opc mul(int in1, int in2, int out) {
-    opc op = {.ins MUL, .val 0, .in1 in1, .in2 in2, .offset 0, .out out};
+opc* opsub(int in1, int in2, int out) {
+    opc* op = newopc(SUB);
+    op->in1 = in1;
+    op->in2 = in2;
+    op->out = out;
     return op;
 }
 
-opc div(int in1, int in2, int out) {
-    opc op = {.ins DIV, .val 0, .in1 in1, .in2 in2, .offset 0, .out out};
+opc* opmul(int in1, int in2, int out) {
+    opc* op = newopc(MUL);
+    op->in1 = in1;
+    op->in2 = in2;
+    op->out = out;
     return op;
 }
 
-opc print(int in, int offset) {
-    opc op = {.ins PRINT, .val 0, .in1 in, .in2 -1, .offset offset, .out -1};
+opc* opdiv(int in1, int in2, int out) {
+    opc* op = newopc(DIV);
+    op->in1 = in1;
+    op->in2 = in2;
+    op->out = out;
     return op;
+}
+
+opc* opprint(int in, int offset) {
+    opc* op = newopc(PRINT);
+    op->in1 = in;
+    op->offset = offset;
+    return op;
+}
+
+machine* newmachine() {
+    return (machine*)calloc(1, sizeof(machine));
+}
+
+op* newop(opc* oper) {
+    op* op_ = (op*)calloc(1, sizeof(op));
+    op_->oper = oper;
+    return op_;
+}
+
+void addop(machine* mach, op* o) {
+    if (mach->root == NULL) { mach->root = o; }
+    else {
+        op* p = mach->root;
+        while (p->next) {
+            p = p->next;
+        }
+        p->next = o;
+        o->prev = p;
+    }
+}
+
+void clean(machine* mach) {
+    op* n0 = mach->root;
+    while (n0) {
+        op* n1 = NULL;
+        if (n0->next) { n1 = n0->next; }
+        free(n0->oper);
+        free(n0);
+        n0 = n1;
+    }
+    free(mach);
 }

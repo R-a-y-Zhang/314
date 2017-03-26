@@ -7,7 +7,8 @@ typedef struct Var {
     int reg; // register id (r<id>)
     char var; // register alias (used only for userspace variables)
     int val; // value in register
-    struct var* next;
+    char usable;
+    struct Var* next;
 } Var;
 
 typedef struct VarRecord {
@@ -25,5 +26,6 @@ Var* findreg(VarRecord* vr, int reg);
 Var* findvar(VarRecord* vr, char var);
 void deletereg(VarRecord* vr, int reg);
 void clearrecord(VarRecord* vr);
+void printrecord(VarRecord* vr);
 
 #endif

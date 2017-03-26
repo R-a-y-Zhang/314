@@ -1,10 +1,11 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include "records.h"
 
 VarRecord* newrecord() {
     VarRecord* r = (VarRecord*)malloc(sizeof(VarRecord));
-    r->ureg = 0;
-    r->sreg = 26;
+    r->ureg = 1;
+    r->sreg = 27;
     r->nc = 'a';
     r->root = NULL;
     return r;
@@ -15,7 +16,7 @@ Var* newreg(VarRecord* vr, int val) {
     var->val = val;
     var->reg = vr->sreg;
     vr->sreg++;
-    var->nc = 0;
+    var->var = 0;
     var->next = NULL;
     return var;
 }
@@ -25,7 +26,7 @@ Var* newureg(VarRecord* vr, char name, int val) {
     var->val = val;
     var->reg = vr->ureg;
     vr->ureg++;
-    var->nc = name;
+    var->var = name;
     var->next = NULL;
     return var;
 }
@@ -67,7 +68,7 @@ Var* findreg(VarRecord* vr, int reg) {
 Var* findvar(VarRecord* vr, char var) {
     Var* v = vr->root;
     while (v != NULL) {
-        if (v->nc == var) {
+        if (v->var == var) {
             return v;
         }
         v = v->next;
@@ -81,4 +82,12 @@ void deletereg(VarRecord* vr, int reg) {
 
 void clearrecord(VarRecord* vr) {
 
+}
+
+void printrecord(VarRecord* vr) {
+    Var* n = vr->root;
+    while (n) {
+        printf("REGISTER %d, VAR %c, VAL %d\n", n->reg, n->var, n->val);
+        n = n->next;
+    }
 }
