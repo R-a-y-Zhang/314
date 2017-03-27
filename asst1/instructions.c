@@ -1,4 +1,6 @@
 #include <stdlib.h>
+#include <stdio.h>
+#include "instructions.h"
 
 opc* newopc(INS v) {
     opc* op = (opc*)calloc(1, sizeof(opc));
@@ -9,10 +11,10 @@ opc* newopc(INS v) {
     return op;
 }
 
-opc* loadI(int v, int in) {
-    opc* op = newopc(LOAD);
+opc* loadI(int v, int out) {
+    opc* op = newopc(LOADI);
     op->val = v;
-    op->in1 = in;
+    op->out = out;
     return op;
 }
 
@@ -24,7 +26,7 @@ opc* loadAI(int in, int offset, int out) {
     return op;
 }
 
-opc* storeAI(int v, int in, int out, int offset) {
+opc* storeAI(int in, int out, int offset) {
     opc* op = newopc(STOREAI);
     op->in1 = in;
     op->out = out;
@@ -81,15 +83,16 @@ op* newop(opc* oper) {
     return op_;
 }
 
-void addop(machine* mach, op* o) {
-    if (mach->root == NULL) { mach->root = o; }
+void addop(machine* mach, opc* o) {
+    op* new_op = newop(o);
+    if (mach->root == NULL) { mach->root = new_op; }
     else {
         op* p = mach->root;
         while (p->next) {
             p = p->next;
         }
-        p->next = o;
-        o->prev = p;
+        p->next = new_op;
+        new_op->prev = p;
     }
 }
 
@@ -103,4 +106,42 @@ void clean(machine* mach) {
         n0 = n1;
     }
     free(mach);
+}
+
+void printmachine(machine* mach) {
+    char* insts[] = {"LOADI", "LOADAI", "STOREAI", "ADD", "SUB", "MUL", "DIV", "PRINT"};
+    op* operator = mach->root;
+    while (operator) {
+        opc* o = operator->oper;
+        switch (o->ins) {
+            case LOADI:
+                printf("LOADI %d -> r%d\n", o->val, o->out);
+                break;
+            case LOADAI:
+                printf("LOADAI %d, %d -> %d\n", o->in1, o->offset, o->out);
+                break;
+            case STOREAI:
+                printf("STOREAI %d -> %d, %d\n", o->in1, o->out, o->offset);
+                break;
+            case PRINT:
+                printf("PRINT %d, %d\n", o->in1, o->offset);
+                break;
+            case ADD:
+                printf("ADD ");
+                break;
+            case SUB:
+                printf("SUB ");
+                break;
+            case MUL:
+                printf("MUL ");
+                break;
+            case DIV:
+                printf("DIV ");
+                break;
+        }
+        if ((o->ins == ADD) || (o->ins == SUB) || (o->ins == MUL) || (o->ins == DIV)) {
+            printf("%d, %d -> %d\n", o->in1, o->in2, o->out);
+        }
+        operator = operator->next;
+    }
 }

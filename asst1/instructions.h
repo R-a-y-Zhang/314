@@ -20,7 +20,7 @@ typedef struct opc {
     int out;
 } opc;
 
-opc* loadI(int v, int in);
+opc* loadI(int v, int out);
 opc* loadAI(int in, int offset, int out);
 opc* storeAI(int in, int out, int offset);
 opc* opadd(int in1, int in2, int out);
@@ -29,19 +29,20 @@ opc* opmul(int in1, int in2, int out);
 opc* opdiv(int in1, int in2, int out);
 opc* opprint(int in, int offset);
 
-typedef struct machine {
-    opc* root;
-} machine;
-
 typedef struct op {
     opc* oper;
     struct op* prev;
     struct op* next;
 } op;
 
+typedef struct machine {
+    op* root;
+} machine;
+
 machine* newmachine();
 op* newop(opc* o);
-void addop(machine* mach, op* o);
+void addop(machine* mach, opc* o);
 void clean(machine* mach);
+void printmachine(machine* mach);
 
 #endif

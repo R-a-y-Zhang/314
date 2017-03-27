@@ -147,6 +147,7 @@ Var* expr() {
             vr->nc++;
         }
         op->in1 = r1; op->in2 = r2;
+        addop(mach, op);
         return reg;
     }
     error("Invalid operation");
@@ -169,7 +170,8 @@ BOOL assign() {
                 Var* newvar = newureg(vr, vname, v->val);
                 printf("New register %d with varname %c value %d\n",
                             newvar->reg, newvar->var, newvar->val);
-                addop(mach, 
+                addop(mach, loadI(v->val, v->reg));
+                addop(mach, storeAI(v->reg, 0, newvar->reg));
                 insertreg(vr, newvar);
                 return TRUE;
             }
@@ -229,5 +231,5 @@ int main(int argc, char** argv) {
     loadFile(argv[1]);
     init();
     printf("%d\n", program());
-    printrecord(vr);
+    printmachine(mach);
 }
